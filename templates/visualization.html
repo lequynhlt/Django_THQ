@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            font-size: 11px;
+            padding: 10px;
+            max-width: 100vw;
+            overflow-x: hidden;
+            max-height: 100vh; 
+            overflow-y: hidden; 
+        }
+        h1 {
+            color: #0213cd;
+            font-size: 25px;
+            margin-bottom: 10px;
+        }
+        .nav-buttons {
+            margin: 20px 0;
+        }
+        .nav-buttons button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #0213cd;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .nav-buttons button.active {
+            background-color: #ff5733;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .chart-box {
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 90vw;
+            min-height: 768px;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            box-sizing: border-box;
+        }
+        .chart-box.active {
+            display: block;
+        }
+        .tooltip {
+            position: absolute;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            pointer-events: none;
+            text-align: left;
+            font-size: 15px;
+        }
+        .domain {
+            stroke: none !important;
+        }
+        svg {
+            border: none !important;
+            stroke: none !important;
+            max-width: 100%;
+            height: auto;
+        }
+        .axis text {
+            font-size: 16px;
+            fill: #333;
+        }
+        .axis-y text {
+            text-anchor: end;
+        }
+        .line {
+            fill: none;
+            stroke-width: 2;
+        }
+        .dot {
+            r: 4;
+        }
+        .legend-container {
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 75%;
+            margin: 10px auto;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 2px 5px;
+        }
+        .legend-item-color {
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+        }
+        .legend-item-text {
+            font-size: 10px;
+        }
+        @media (max-width: 768px) {
+            .chart-box {
+                width: 100%;
+                max-height: 500px;
+            }
+            .nav-buttons button {
+                padding: 8px 10px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-buttons">
+        <button class="nav-btn active" data-chart="q1">Q1</button>
+        <button class="nav-btn" data-chart="q2">Q2</button>
+        <button class="nav-btn" data-chart="q3">Q3</button>
+        <button class="nav-btn" data-chart="q4">Q4</button>
+        <button class="nav-btn" data-chart="q5">Q5</button>
+        <button class="nav-btn" data-chart="q6">Q6</button>
+        <button class="nav-btn" data-chart="q7">Q7</button>
+        <button class="nav-btn" data-chart="q8">Q8</button>
+        <button class="nav-btn" data-chart="q9">Q9</button>
+        <button class="nav-btn" data-chart="q10">Q10</button>
+        <button class="nav-btn" data-chart="q11">Q11</button>
+        <button class="nav-btn" data-chart="q12">Q12</button>
+    </div>
+    <div class="chart-container">
+        <div class="chart-box active" id="q1-box">
+            <h1>Doanh số bán theo mặt hàng</h1>
+            <div id="Q1"></div>
+        </div>
+        <div class="chart-box" id="q2-box">
+            <h1>Doanh số bán theo nhóm hàng</h1>
+            <div id="Q2"></div>
+        </div>
+        <div class="chart-box" id="q3-box">
+            <h1>Doanh số bán theo tháng</h1>
+            <div id="Q3"></div>
+        </div>
+        <div class="chart-box" id="q4-box">
+            <h1>Doanh số bán trung bình theo ngày trong tuần</h1>
+            <div id="Q4"></div>
+        </div>
+        <div class="chart-box" id="q5-box">
+            <h1>Doanh số bán trung bình theo ngày trong tháng</h1>
+            <div id="Q5"></div>
+        </div>
+        <div class="chart-box" id="q6-box">
+            <h1>Doanh số bán trung bình theo khung giờ</h1>
+            <div id="Q6"></div>
+        </div>
+        <div class="chart-box" id="q7-box">
+            <h1>Xác suất bán theo nhóm hàng</h1>
+            <div id="Q7"></div>
+        </div>
+        <div class="chart-box" id="q8-box">
+            <h1>Xác suất bán theo nhóm hàng theo tháng</h1>
+            <div id="Q8"></div>
+        </div>
+        <div class="chart-box" id="q9-box">
+            <h1>Xác suất bán mặt hàng trong nhóm</h1>
+            <div id="Q9"></div>
+        </div>
+        <div class="chart-box" id="q10-box">
+            <h1>Xác suất bán mặt hàng theo tháng</h1>
+            <div id="Q10"></div>
+        </div>
+        <div class="chart-box" id="q11-box">
+            <h1>Số lượng khách hàng theo số lượt mua hàng</h1>
+            <div id="Q11"></div>
+        </div>
+        <div class="chart-box" id="q12-box">
+            <h1>Số lượng khách hàng theo khoảng chi tiêu</h1>
+            <div id="Q12"></div>
+        </div>
+    </div>
+
+    <script>
+        let data_for_q1, data_for_q2, data_for_q3, data_for_q4, data_for_q5, data_for_q6, data_for_q7, 
+            data_for_q8, data_for_q9, data_for_q10, data_for_q11, data_for_q12;
+        try { data_for_q1 = {{ data_for_q1 | safe }}; } catch (e) { console.error("Error Q1:", e); data_for_q1 = []; }
+        try { data_for_q2 = {{ data_for_q2 | safe }}; } catch (e) { console.error("Error Q2:", e); data_for_q2 = []; }
+        try { data_for_q3 = {{ data_for_q3 | safe }}; } catch (e) { console.error("Error Q3:", e); data_for_q3 = []; }
+        try { data_for_q4 = {{ data_for_q4 | safe }}; } catch (e) { console.error("Error Q4:", e); data_for_q4 = []; }
+        try { data_for_q5 = {{ data_for_q5 | safe }}; } catch (e) { console.error("Error Q5:", e); data_for_q5 = []; }
+        try { data_for_q6 = {{ data_for_q6 | safe }}; } catch (e) { console.error("Error Q6:", e); data_for_q6 = []; }
+        try { data_for_q7 = {{ data_for_q7 | safe }}; } catch (e) { console.error("Error Q7:", e); data_for_q7 = []; }
+        try { data_for_q8 = {{ data_for_q8 | safe }}; } catch (e) { console.error("Error Q8:", e); data_for_q8 = []; }
+        try { data_for_q9 = {{ data_for_q9 | safe }}; } catch (e) { console.error("Error Q9:", e); data_for_q9 = []; }
+        try { data_for_q10 = {{ data_for_q10 | safe }}; } catch (e) { console.error("Error Q10:", e); data_for_q10 = []; }
+        try { data_for_q11 = {{ data_for_q11 | safe }}; } catch (e) { console.error("Error Q11:", e); data_for_q11 = []; }
+        try { data_for_q12 = {{ data_for_q12 | safe }}; } catch (e) { console.error("Error Q12:", e); data_for_q12 = []; }
+
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0)
+            .style("position", "absolute")
+            .style("background", "#fff")
+            .style("border", "1px solid #ccc")
+            .style("padding", "5px")
+            .style("pointer-events", "none")
+            .style("text-align", "left")
+            .style("font-size", "16px");
+
+        document.querySelectorAll('.nav-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.chart-box').forEach(box => box.classList.remove('active'));
+                this.classList.add('active');
+                const chartId = this.getAttribute('data-chart');
+                document.getElementById(`${chartId}-box`).classList.add('active');
+            });
+        });
+
+        // Q1
+        if (typeof data_for_q1 !== "undefined" && Array.isArray(data_for_q1) && data_for_q1.length > 0) {
+            const margin = { top: 40, right: 200, bottom: 50, left: 250 }, 
+            width = 700, 
+            height = 400;
+
+            const data1 = data_for_q1.map(d => ({
+                "Nhóm hàng": `[${d["Mã nhóm hàng"]}] ${d["Tên nhóm hàng"]}`,
+                "Mặt hàng": `[${d["Mã mặt hàng"]}] ${d["Tên mặt hàng"]}`,
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+            }));
+
+            const aggregatedData = data1.reduce((acc, item) => {
+                const existingItem = acc.find(d => d["Mặt hàng"] === item["Mặt hàng"]);
+                if (existingItem) {
+                    existingItem["Thành tiền"] += item["Thành tiền"];
+                } else {
+                    acc.push({ ...item });
+                }
+                return acc;
+            }, []).sort((a, b) => b["Thành tiền"] - a["Thành tiền"]);
+
+            const svg = d3.select("#Q1").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(aggregatedData, d => d["Thành tiền"]) * 1.1])
+                .range([0, width]);
+
+            const y = d3.scaleBand()
+                .domain(aggregatedData.map(d => d["Mặt hàng"]))
+                .range([0, height])
+                .padding(0.2);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            chart.selectAll(".bar")
+                .data(aggregatedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", 0)
+                .attr("y", d => y(d["Mặt hàng"]))
+                .attr("width", d => x(d["Thành tiền"]))
+                .attr("height", y.bandwidth())
+                .attr("fill", d => colorScale(d["Nhóm hàng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(
+                        `<strong>Mặt hàng:</strong> ${d["Mặt hàng"]}<br>` +
+                        `<strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}<br>` +
+                        `<strong>Doanh số bán:</strong> ${parseFloat(d["Thành tiền"]).toLocaleString('en-US')} VND`         
+                        )
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.selectAll(".label")
+                .data(aggregatedData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(d["Thành tiền"]) + 5)
+                .attr("y", d => y(d["Mặt hàng"]) + y.bandwidth() / 2)
+                .attr("dy", ".35em")
+                .text(d => `${(d["Thành tiền"] / 1_000_000).toFixed(0)} triệu VND`)
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d => `${(d / 1_000_000).toFixed(0)}M`).ticks(7))
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .call(d3.axisLeft(y))
+                .selectAll("text")
+                .style("font-size", "12px")
+                .style("text-anchor", "end");
+
+            const filter = svg.append("g")
+                .attr("transform", `translate(${width + margin.left + 30},${margin.top})`);
+
+            const filterRects = filter.selectAll("rect")
+                .data(colorScale.domain())
+                .enter()
+                .append("rect")
+                .attr("y", (d, i) => i * 20)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", colorScale);
+
+            filter.selectAll("text")
+                .data(colorScale.domain())
+                .enter()
+                .append("text")
+                .attr("x", 15)
+                .attr("y", (d, i) => i * 20 + 9)
+                .text(d => d)
+                .style("font-size", "11px");
+        }
+        // Q2
+        if (typeof data_for_q2 !== "undefined" && Array.isArray(data_for_q2) && data_for_q2.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 200 }, 
+            width = 900, 
+            height = 400;
+
+            const aggregatedData = data_for_q2.map(d => ({
+                "Nhóm hàng": `[${d["Mã nhóm hàng"]}] ${d["Tên nhóm hàng"]}`,
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+            }));
+
+            const finalData = aggregatedData.reduce((acc, item) => {
+                const existingItem = acc.find(d => d["Nhóm hàng"] === item["Nhóm hàng"]);
+                if (existingItem) {
+                    existingItem["Thành tiền"] += item["Thành tiền"];
+                } else {
+                    acc.push({
+                        "Nhóm hàng": item["Nhóm hàng"],
+                        "Thành tiền": item["Thành tiền"],
+                    });
+                }
+                return acc;
+            }, []).sort((a, b) => b["Thành tiền"] - a["Thành tiền"]);
+
+            const svg = d3.select("#Q2")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleLinear()
+                .domain([0, 2_000_000_000]) 
+                .range([0, width]);
+
+            const y = d3.scaleBand()
+                .domain(finalData.map(d => d["Nhóm hàng"]))
+                .range([0, height])
+                .padding(0.2);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            chart.selectAll(".bar")
+                .data(finalData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", 0)
+                .attr("y", d => y(d["Nhóm hàng"]))
+                .attr("width", d => x(d["Thành tiền"]))
+                .attr("height", y.bandwidth())
+                .attr("fill", d => colorScale(d["Nhóm hàng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}</p>
+                        <p><strong>Doanh số bán:</strong> ${parseFloat(d["Thành tiền"]).toLocaleString('en-US')} VND</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.selectAll(".label")
+                .data(finalData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(d["Thành tiền"]) + 5)
+                .attr("y", d => y(d["Nhóm hàng"]) + y.bandwidth() / 2)
+                .attr("dy", ".35em")
+                .text(d => `${(d["Thành tiền"] / 1_000_000).toFixed(0)} triệu VND`)
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d => `${(d / 1_000_000).toFixed(0)}M`).ticks(20) )
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .call(d3.axisLeft(y))
+                .selectAll("text")
+                .style("font-size", "12px")
+                .style("text-anchor", "end");
+        }
+
+        // Q3
+        if (typeof data_for_q3 !== "undefined" && Array.isArray(data_for_q3) && data_for_q3.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 50 }, 
+            width = 900,
+            height = 300;
+
+            const aggregatedData = data_for_q3.map(d => ({
+                "Tháng": d["Tháng"],
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+            }));
+
+            const finalData = aggregatedData.reduce((acc, item) => {
+                const existingItem = acc.find(d => d["Tháng"] === item["Tháng"]);
+                if (existingItem) {
+                    existingItem["Thành tiền"] += item["Thành tiền"];
+                } else {
+                    acc.push({
+                        "Tháng": item["Tháng"],
+                        "Thành tiền": item["Thành tiền"],
+                    });
+                }
+                return acc;
+            }, []).sort((a, b) => a["Tháng"] - b["Tháng"]);
+
+            const svg = d3.select("#Q3")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(finalData.map(d => `Tháng ${d["Tháng"]}`))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, 800_000_000]) 
+                .range([height, 0]);
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            chart.selectAll(".bar")
+                .data(finalData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(`Tháng ${d["Tháng"]}`))
+                .attr("y", d => y(d["Thành tiền"]))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d["Thành tiền"]))
+                .attr("fill", d => colorScale(d["Tháng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>Tháng:</strong> ${d["Tháng"]}</p>
+                        <p><strong>Doanh số bán:</strong> ${parseFloat(d["Thành tiền"]).toLocaleString('en-US')} VND</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.selectAll(".label")
+                .data(finalData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(`Tháng ${d["Tháng"]}`) + x.bandwidth() / 2)
+                .attr("y", d => y(d["Thành tiền"]) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => `${(d["Thành tiền"] / 1_000_000).toFixed(0)} triệu VND`)
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .call(d3.axisLeft(y)
+                    .tickFormat(d => `${(d / 1_000_000).toFixed(0)}M`)
+                    .ticks(8)
+                )
+                .style("font-size", "12px");
+        }
+        // Q4
+        if (typeof data_for_q4 !== "undefined" && Array.isArray(data_for_q4) && data_for_q4.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 50 };
+            const width = 900;
+            const height = 300;
+
+            const validData = data_for_q4.filter(d => d["Thứ"] && typeof d["Doanh số bán TB"] === "number" && !isNaN(d["Doanh số bán TB"]));
+
+            if (validData.length === 0) {
+                console.error("Không có dữ liệu hợp lệ để vẽ biểu đồ Q4!");
+            } else {
+                const svg = d3.select("#Q4")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom);
+
+                const chart = svg.append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                const x = d3.scaleBand()
+                    .domain(validData.map(d => d["Thứ"]))
+                    .range([0, width])
+                    .padding(0.2);
+
+                const y = d3.scaleLinear()
+                    .domain([0, d3.max(validData, d => d["Doanh số bán TB"]) * 1.1]) 
+                    .range([height, 0]);
+
+                const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+                chart.selectAll(".bar")
+                    .data(validData)
+                    .enter()
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", d => x(d["Thứ"]))
+                    .attr("y", d => y(d["Doanh số bán TB"]))
+                    .attr("width", x.bandwidth())
+                    .attr("height", d => height - y(d["Doanh số bán TB"]))
+                    .attr("fill", d => colorScale(d["Thứ"]))
+                    .on("mouseover", function (event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+                        tooltip.html(`
+                            <p><strong>Ngày ${d["Thứ"]}</strong></p>
+                            <p><strong>Doanh số bán TB:</strong> ${parseFloat(d["Doanh số bán TB"]).toLocaleString('en-US')} VND</p>
+                        `)
+                            .style("left", (event.pageX + 5) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function () {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+
+                chart.selectAll(".label")
+                    .data(validData)
+                    .enter()
+                    .append("text")
+                    .attr("class", "label")
+                    .attr("x", d => x(d["Thứ"]) + x.bandwidth() / 2)
+                    .attr("y", d => y(d["Doanh số bán TB"]) - 5)
+                    .attr("text-anchor", "middle")
+                    .text(d => `${Math.round(d["Doanh số bán TB"]).toLocaleString()} VND`)
+                    .style("font-size", "12px");
+
+                chart.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x))
+                    .style("font-size", "12px");
+
+                chart.append("g")
+                    .call(d3.axisLeft(y)
+                        .tickFormat(d => `${(d / 1_000_000).toFixed(0)}M`)
+                        .ticks(5)
+                    )
+                    .style("font-size", "12px");
+            }
+        }
+        // Q5
+        if (typeof data_for_q5 !== "undefined" && Array.isArray(data_for_q5) && data_for_q5.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 50 };
+            const width = 1000;
+            const height = 350;
+
+            const aggregatedData = data_for_q5.map(d => ({
+                "Ngày trong tháng": d["Ngày trong tháng"],
+                "Doanh số bán TB": parseFloat(d["Doanh số bán TB"]) || 0,
+            })).sort((a, b) => parseInt(a["Ngày trong tháng"].split(' ')[1]) - parseInt(b["Ngày trong tháng"].split(' ')[1]));
+
+            const svg = d3.select("#Q5")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(aggregatedData.map(d => d["Ngày trong tháng"]))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, 15_000_000])
+                .range([height, 0]);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            chart.selectAll(".bar")
+                .data(aggregatedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d["Ngày trong tháng"]))
+                .attr("y", d => y(d["Doanh số bán TB"]))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d["Doanh số bán TB"]))
+                .attr("fill", d => colorScale(d["Ngày trong tháng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>${d["Ngày trong tháng"]}</strong></p>
+                        <p><strong>Doanh số bán TB:</strong> ${(d["Doanh số bán TB"] / 1_000_000).toFixed(1)} triệu VND</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.selectAll(".label")
+                .data(aggregatedData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(d["Ngày trong tháng"]) + x.bandwidth() / 2)
+                .attr("y", d => y(d["Doanh số bán TB"]) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => `${(d["Doanh số bán TB"] / 1_000_000).toFixed(1)} tr`)
+                .style("font-size", "10px");
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "11px")
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-90)");
+
+            chart.append("g")
+                .call(d3.axisLeft(y)
+                    .tickFormat(d => `${(d / 1_000_000).toFixed(0)}M`)
+                    .ticks(15) 
+                )
+                .style("font-size", "11px");
+        }
+        // Q6
+        if (typeof data_for_q6 !== "undefined" && Array.isArray(data_for_q6) && data_for_q6.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 100, left: 50 };
+            const width = 1100;
+            const height = 350;
+        
+            const aggregatedData = data_for_q6.map(d => ({
+                "Khung giờ": d["Khung giờ"],
+                "Doanh số bán TB": parseFloat(d["Doanh số bán TB"]) || 0,
+            })).sort((a, b) => parseInt(a["Khung giờ"].split(':')[0]) - parseInt(b["Khung giờ"].split(':')[0]));
+        
+            const svg = d3.select("#Q6")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+        
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+            const x = d3.scaleBand()
+                .domain(aggregatedData.map(d => d["Khung giờ"]))
+                .range([0, width])
+                .padding(0.2);
+        
+        
+            const y = d3.scaleLinear()
+                .domain([0, 900_000])
+                .range([height, 0]);
+        
+        
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+        
+        
+            chart.selectAll(".bar")
+                .data(aggregatedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d["Khung giờ"]))
+                .attr("y", d => y(d["Doanh số bán TB"]))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d["Doanh số bán TB"]))
+                .attr("fill", d => colorScale(d["Khung giờ"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>${d["Khung giờ"]}</strong></p>
+                        <p><strong>Doanh số bán TB:</strong> ${Math.round(d["Doanh số bán TB"]).toLocaleString('en-US')} VND</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+        
+        
+            chart.selectAll(".label")
+                .data(aggregatedData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(d["Khung giờ"]) + x.bandwidth() / 2)
+                .attr("y", d => y(d["Doanh số bán TB"]) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => `${(d["Doanh số bán TB"] / 1_000).toFixed(1)}K`)
+                .style("font-size", "10px");
+        
+        
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "12px")
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-45)");
+        
+        
+            chart.append("g")
+                .call(d3.axisLeft(y)
+                    .tickFormat(d => `${(d / 1_000).toFixed(0)}K`)
+                    .ticks(9)
+                )
+                .style("font-size", "11px");
+        }        
+        // Q7
+        if (typeof data_for_q7 !== "undefined" && Array.isArray(data_for_q7) && data_for_q7.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 200 };
+            const width = 900;
+            const height = 400;
+
+            const aggregatedData = data_for_q7.map(d => ({
+                "Nhóm hàng": d["Nhóm hàng"],
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+                "SL": parseFloat(d["SL"]) || 0,
+                "Xác suất bán": parseFloat(d["Xác suất bán"]) || 0
+            })).sort((a, b) => b["Xác suất bán"] - a["Xác suất bán"]);
+
+            const svg = d3.select("#Q7").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(aggregatedData, d => d["Xác suất bán"]) * 1.1])
+                .range([0, width]);
+
+            const y = d3.scaleBand()
+                .domain(aggregatedData.map(d => d["Nhóm hàng"]).reverse())
+                .range([height, 0])
+                .padding(0.2);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            chart.selectAll(".bar")
+                .data(aggregatedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", 0)
+                .attr("y", d => y(d["Nhóm hàng"]))
+                .attr("width", d => x(d["Xác suất bán"]))
+                .attr("height", y.bandwidth())
+                .attr("fill", d => colorScale(d["Nhóm hàng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}</p>
+                        <p><strong>Xác suất Bán:</strong> ${d["Xác suất bán"].toFixed(1)}%</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.selectAll(".label")
+                .data(aggregatedData)
+                .enter()
+                .append("text")
+                .attr("class", "label")
+                .attr("x", d => x(d["Xác suất bán"]) + 5)
+                .attr("y", d => y(d["Nhóm hàng"]) + y.bandwidth() / 2)
+                .attr("dy", "0.35em")
+                .text(d => `${d["Xác suất bán"].toFixed(1)}%`)
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d => `${d}%`).ticks(6))
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .call(d3.axisLeft(y))
+                .style("font-size", "12px");
+        }
+
+        // Q8
+        if (typeof data_for_q8 !== "undefined" && Array.isArray(data_for_q8) && data_for_q8.length > 0) {
+            const margin = { top: 40, right: 200, bottom: 100, left: 200 };
+            const width = 900;
+            const height = 400;
+
+            const finalData = data_for_q8.map(d => ({
+                "Tháng": d["Tháng"],
+                "Nhóm hàng": d["Nhóm hàng"],
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+                "SL": parseFloat(d["SL"]) || 0,
+                "SL Đơn Bán": parseFloat(d["SL Đơn Bán"]) || 0,
+                "Xác suất bán": parseFloat(d["Xác suất bán"]) || 0
+            }));
+
+            const svg = d3.select("#Q8").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain([...new Set(finalData.map(d => d["Tháng"]))])
+                .range([0, width])
+                .padding(0.1);
+
+            const y = d3.scaleLinear()
+                .domain([20, 70]) 
+                .range([height, 0]);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+            const groupedData = d3.groups(finalData, d => d["Nhóm hàng"]);
+
+            const line = d3.line()
+                .x(d => x(d["Tháng"]) + x.bandwidth() / 2)
+                .y(d => y(d["Xác suất bán"]));
+
+            const lines = chart.selectAll(".line")
+                .data(groupedData)
+                .enter()
+                .append("path")
+                .attr("class", "line")
+                .attr("d", d => line(d[1]))
+                .attr("stroke", d => colorScale(d[0]))
+                .attr("fill", "none")
+                .attr("stroke-width", 2)
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>Nhóm hàng:</strong> ${d[0]}</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            const markers = chart.selectAll(".marker")
+                .data(finalData)
+                .enter()
+                .append("circle")
+                .attr("class", "marker")
+                .attr("cx", d => x(d["Tháng"]) + x.bandwidth() / 2)
+                .attr("cy", d => y(d["Xác suất bán"]))
+                .attr("r", 4)
+                .attr("fill", d => colorScale(d["Nhóm hàng"]))
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>${d["Tháng"]}</strong></p>
+                        <p><strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}</p>
+                        <p><strong>Xác suất Bán:</strong> ${d["Xác suất bán"].toFixed(1)}%</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            chart.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "12px");
+
+            chart.append("g")
+                .call(d3.axisLeft(y).tickFormat(d => `${d}%`).ticks(10))
+                .style("font-size", "12px");
+
+            const filter = svg.append("g")
+                .attr("transform", `translate(${width + margin.left + 30},${margin.top})`);
+
+            const filterRects = filter.selectAll("rect")
+                .data(colorScale.domain())
+                .enter()
+                .append("rect")
+                .attr("y", (d, i) => i * 20)
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", colorScale);
+
+            filter.selectAll("text")
+                .data(colorScale.domain())
+                .enter()
+                .append("text")
+                .attr("x", 15)
+                .attr("y", (d, i) => i * 20 + 9)
+                .text(d => d)
+                .style("font-size", "12px");
+        }
+
+        // Q9
+        if (typeof data_for_q9 !== "undefined" && Array.isArray(data_for_q9) && data_for_q9.length > 0) {
+            const margin = { top: 30, right: 50, bottom: 70, left: 120 };
+            const width = 350;
+            const height = 150;
+    
+
+            const data1 = data_for_q9.map(d => ({
+                "Mã đơn hàng": d["Mã đơn hàng"],
+                "Nhóm hàng": `[${d["Mã nhóm hàng"]}] ${d["Tên nhóm hàng"]}`,
+                "Mặt hàng": `[${d["Mã mặt hàng"]}] ${d["Tên mặt hàng"]}`,
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0,
+                "SL": parseFloat(d["SL"]) || 0,
+                "Tháng tạo đơn": `Tháng ${new Date(d["Thời gian tạo đơn"]).getMonth() + 1}`
+            }));
+
+            const tong_nhom = d3.rollup(data1, v => new Set(v.map(d => d["Mã đơn hàng"])).size, d => d["Nhóm hàng"]);
+            const df_grouped = d3.rollup(data1, v => new Set(v.map(d => d["Mã đơn hàng"])).size, d => d["Nhóm hàng"], d => d["Mặt hàng"]);
+            const df_result = Array.from(df_grouped).flatMap(([group, items]) =>
+                Array.from(items).map(([item, count]) => ({
+                    "Nhóm hàng": group,
+                    "Mặt hàng": item,
+                    "don_hang_mat_hang": count,
+                    "tong_don_theo_nhom": tong_nhom.get(group),
+                    "Xác suất bán": count / tong_nhom.get(group)
+                }))
+            ).sort((a, b) => b["Xác suất bán"] - a["Xác suất bán"]);
+
+            const svg = d3.select("#Q9").append("svg")
+                .attr("width", (width + margin.left + margin.right) * 3)
+                .attr("height", (height + margin.top + margin.bottom) * 2);
+
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+            const groupedData = d3.groups(df_result, d => d["Nhóm hàng"]);
+            const orderedGroups = ["[BOT] Bột", "[SET] Set trà", "[THO] Trà hoa", "[TMX] Trà mix", "[TTC] Trà củ, quả sấy"];
+            const sortedGroupedData = orderedGroups.map(group => groupedData.find(g => g[0] === group)).filter(g => g);
+
+            const groupSpacing = (width + margin.right);
+
+            sortedGroupedData.forEach(([group, data], index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                let xOffset = col * groupSpacing;
+                if (row === 1) {
+                    xOffset = (col % 2) * groupSpacing + (groupSpacing / 2);
+                }
+
+                const groupChart = chart.append("g")
+                    .attr("transform", `translate(${xOffset},${row * (height + margin.bottom)})`);
+
+                const x = d3.scaleLinear()
+                    .domain([0, d3.max(data, d => d["Xác suất bán"]) * 1.1])
+                    .range([0, width - margin.left - margin.right]);
+
+                const y = d3.scaleBand()
+                    .domain(data.map(d => d["Mặt hàng"]))
+                    .range([0, height])
+                    .padding(0.3);
+
+                groupChart.selectAll(".bar")
+                    .data(data)
+                    .enter()
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", 0)
+                    .attr("y", d => y(d["Mặt hàng"]))
+                    .attr("width", d => x(d["Xác suất bán"]))
+                    .attr("height", y.bandwidth())
+                    .attr("fill", d => colorScale(d["Mặt hàng"]))
+                    .on("mouseover", function (event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+                        tooltip.html(`
+                            <strong>Mặt hàng:</strong> ${d["Mặt hàng"]}<br>
+                            <strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}<br>
+                            <strong>Xác suất Bán / Nhóm hàng:</strong> ${(d["Xác suất bán"] * 100).toFixed(0)}%
+                        `)
+                            .style("left", (event.pageX + 5) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function () {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+
+                groupChart.selectAll(".label")
+                    .data(data)
+                    .enter()
+                    .append("text")
+                    .attr("class", "label")
+                    .attr("x", d => x(d["Xác suất bán"]) - 5)
+                    .attr("y", d => y(d["Mặt hàng"]) + y.bandwidth() / 2)
+                    .attr("dy", ".35em")
+                    .text(d => `${(d["Xác suất bán"] * 100).toFixed(1)}%`)
+                    .style("font-size", "12px")
+                    .style("fill", "white")
+                    .style("text-anchor", "end");
+
+                groupChart.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x).tickFormat(d => `${(d * 100).toFixed(0)}%`).ticks(5))
+                    .style("font-size", "12px");
+
+                groupChart.append("g")
+                    .call(d3.axisLeft(y))
+                    .selectAll("text")
+                    .style("font-size", "12px")
+                    .style("text-anchor", "end");
+
+                groupChart.append("text")
+                    .attr("x", width / 2 - margin.left)
+                    .attr("y", -5)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "13px")
+                    .attr("font-weight", "bold")
+                    .text(group);
+            });
+        }
+        // Q10
+        if (typeof data_for_q10 !== "undefined" && Array.isArray(data_for_q10) && data_for_q10.length > 0) {
+            const width = 350, height = 150, margin = { top: 30, right: 50, bottom: 50, left: 50 }; 
+       
+
+            const data = data_for_q10;
+            const data_processed = data.map(d => ({
+                "Tháng": `T ${d["Thời gian tạo đơn"].split("-")[1]}`,
+                "Nhóm hàng": `[${d["Mã nhóm hàng"]}] ${d["Tên nhóm hàng"]}`,
+                "Mặt hàng": `[${d["Mã mặt hàng"]}] ${d["Tên mặt hàng"]}`,
+                "Mã đơn hàng": d["Mã đơn hàng"]
+            }));
+       
+            const totalOrdersByGroupMonth = {};
+            const itemOrdersByGroupMonth = {};
+            data_processed.forEach(({ "Nhóm hàng": group, "Mặt hàng": item, "Tháng": month, "Mã đơn hàng": orderID }) => {
+                if (!totalOrdersByGroupMonth[group]) totalOrdersByGroupMonth[group] = {};
+                if (!totalOrdersByGroupMonth[group][month]) totalOrdersByGroupMonth[group][month] = new Set();
+                totalOrdersByGroupMonth[group][month].add(orderID);
+                const key = `${group}|||${item}|||${month}`;
+                if (!itemOrdersByGroupMonth[key]) itemOrdersByGroupMonth[key] = new Set();
+                itemOrdersByGroupMonth[key].add(orderID);
+            });
+       
+            const probabilityData = {};
+            Object.keys(itemOrdersByGroupMonth).forEach(key => {
+                const [group, item, month] = key.split("|||");
+                if (!probabilityData[group]) probabilityData[group] = [];
+                probabilityData[group].push({
+                    "Tháng": month,
+                    "Mặt hàng": item,
+                    "Nhóm hàng": group,
+                    "Xác suất": itemOrdersByGroupMonth[key].size / totalOrdersByGroupMonth[group][month].size * 100
+                });
+            });
+       
+            Object.values(probabilityData).forEach(data => {
+                data.sort((a, b) => parseInt(a["Tháng"].split(" ")[1]) - parseInt(b["Tháng"].split(" ")[1]));
+            });
+       
+            const rowSpacing = 50; 
+            const svg = d3.select("#Q10").append("svg")
+                .attr("width", (width + margin.left + margin.right) * 3)
+                .attr("height", (height + margin.top + margin.bottom) * 2 + rowSpacing);
+       
+            const chart = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+       
+            const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+       
+            const orderedGroups = ["[BOT] Bột", "[SET] Set trà", "[THO] Trà hoa", "[TMX] Trà mix", "[TTC] Trà củ, quả sấy"];
+            const sortedGroupedData = orderedGroups.map(group => [group, probabilityData[group]]).filter(g => g[1]);
+       
+            const groupSpacing = (width + margin.right + 20); 
+            sortedGroupedData.forEach(([group, data], index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                let xOffset = col * groupSpacing;
+                if (row === 1) {
+                    xOffset = (col % 2) * groupSpacing + (groupSpacing / 2);
+                }
+       
+                const groupChart = chart.append("g")
+                    .attr("transform", `translate(${xOffset},${row * (height + margin.bottom + rowSpacing)})`);
+       
+                const x = d3.scalePoint()
+                    .domain([...new Set(data.map(d => d["Tháng"]))])
+                    .range([0, width - margin.left - margin.right])
+                    .padding(0.5);
+       
+                const isBotBot = group === "[BOT] Bột";
+                const minY = isBotBot ? 90 : d3.min(data, d => d["Xác suất"]);
+                const maxY = isBotBot ? 110 : d3.max(data, d => d["Xác suất"]);
+                const padding = (maxY - minY) * 0.2; 
+                const yDomain = [minY - padding, maxY + padding];
+               
+                const y = d3.scaleLinear()
+                    .domain(yDomain)
+                    .range([height, 0])
+                    .nice();
+       
+                groupChart.append("g")
+                    .attr("transform", `translate(0,${height})`)
+                    .call(d3.axisBottom(x))
+                    .style("font-size", "11px");
+       
+                groupChart.append("g")
+                    .call(d3.axisLeft(y).tickFormat(d => `${d.toFixed(0)}%`).ticks(5))
+                    .style("font-size", "11px");
+       
+                const items = [...new Set(data.map(d => d["Mặt hàng"]))];
+                const lines = groupChart.selectAll(".line-group")
+                    .data(items)
+                    .enter()
+                    .append("g")
+                    .attr("class", "line-group");
+       
+                lines.each(function(item) {
+                    const itemData = data.filter(d => d["Mặt hàng"] === item);
+                    const line = d3.line()
+                        .x(d => x(d["Tháng"]))
+                        .y(d => y(d["Xác suất"]));
+       
+                    d3.select(this).append("path")
+                        .datum(itemData)
+                        .attr("class", "line")
+                        .attr("d", line)
+                        .attr("stroke", colorScale(item))
+                        .attr("fill", "none");
+                });
+       
+                groupChart.selectAll(".dot")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "dot")
+                    .attr("cx", d => x(d["Tháng"]))
+                    .attr("cy", d => y(d["Xác suất"]))
+                    .attr("r", 4)
+                    .attr("fill", d => colorScale(d["Mặt hàng"]))
+                    .on("mouseover", function(event, d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", 0.9);
+                        tooltip.html(`
+                            <strong>Tháng:</strong> ${d["Tháng"]}<br>
+                            <strong>Mặt hàng:</strong> ${d["Mặt hàng"]}<br>
+                            <strong>Nhóm hàng:</strong> ${d["Nhóm hàng"]}<br>
+                            <strong>Xác suất bán:</strong> ${d["Xác suất"].toFixed(1)}%
+                        `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function() {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+       
+                groupChart.append("text")
+                    .attr("x", width / 2 - margin.left)
+                    .attr("y", -5)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "13px")
+                    .attr("font-weight", "bold")
+                    .text(group);
+       
+                const legend = groupChart.append("g")
+                    .attr("class", "legend-container")
+                    .attr("transform", `translate(0, ${height + 30})`);
+       
+                items.forEach((item, i) => {
+                    const legendItem = legend.append("g")
+                        .attr("class", "legend-item")
+                        .attr("transform", `translate(${(i % 2) * 150},${Math.floor(i / 2) * 15})`);
+       
+                    legendItem.append("rect")
+                        .attr("class", "legend-item-color")
+                        .attr("width", 10)
+                        .attr("height", 10)
+                        .attr("fill", colorScale(item));
+       
+                    legendItem.append("text")
+                        .attr("class", "legend-item-text")
+                        .attr("x", 15)
+                        .attr("y", 10)
+                        .text(item)
+                        .style("font-size", "8px");
+                });
+            });
+       
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0)
+                .style("position", "absolute")
+                .style("background", "#fff")
+                .style("border", "1px solid #ccc")
+                .style("padding", "10px")
+                .style("pointer-events", "none")
+                .style("text-align", "left");
+        }        
+        // Q11
+        if (typeof data_for_q11 !== "undefined" && Array.isArray(data_for_q11) && data_for_q11.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 50, left: 60 },
+                width = 900 - margin.left - margin.right,
+                height = 500 - margin.top - margin.bottom;
+
+            const aggregatedData = Array.from(
+                d3.rollup(data_for_q11, 
+                    v => new Set(v.map(d => d["Mã đơn hàng"])).size,
+                    d => d["Mã khách hàng"]
+                ),
+                ([key, value]) => ({ "Mã khách hàng": key, "Số lượt mua hàng": value })
+            );
+
+            const purchaseCountData = Array.from(
+                d3.rollup(aggregatedData,
+                    v => v.length,
+                    d => d["Số lượt mua hàng"]
+                ),
+                ([key, value]) => ({ "Số lượt mua hàng": key, "Số lượng KH": value })
+            );
+
+            purchaseCountData.sort((a, b) => a["Số lượt mua hàng"] - b["Số lượt mua hàng"]);
+
+            const svg = d3.select("#Q11")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(purchaseCountData.map(d => d["Số lượt mua hàng"].toString()))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, 5000])
+                .range([height, 0]);
+
+            const bars = svg.selectAll(".bar")
+                .data(purchaseCountData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(d["Số lượt mua hàng"].toString()))
+                .attr("y", d => y(d["Số lượng KH"]))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d["Số lượng KH"]))
+                .attr("fill", "steelblue")
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    tooltip.html(`
+                        <p><strong>Đã mua ${d["Số lượt mua hàng"]} lần</strong></p>
+                        <p><strong>Số lượng KH:</strong> ${d["Số lượng KH"].toLocaleString()}</p>
+                    `)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px")
+                        .style("font-size", "11px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "11px");
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(10))
+                .style("font-size", "11px");
+        }
+
+        // Q12 
+        if (typeof data_for_q12 !== "undefined" && Array.isArray(data_for_q12) && data_for_q12.length > 0) {
+            const margin = { top: 40, right: 40, bottom: 100, left: 80 },
+                width = 900,
+                height = 400;
+
+            const data1 = data_for_q12.map(d => ({
+                "Mã khách hàng": d["Mã khách hàng"],
+                "Thành tiền": parseFloat(d["Thành tiền"]) || 0
+            }));
+
+            const customerSpending = Array.from(
+                d3.rollup(data1,
+                    v => d3.sum(v, d => d["Thành tiền"]),
+                    d => d["Mã khách hàng"]
+                ),
+                ([key, value]) => ({ "Mã khách hàng": key, "Chi tiêu KH": value })
+            );
+
+            const binSize = 50000;
+            const binnedData = Array.from(
+                d3.rollup(customerSpending,
+                    v => v.length,
+                    d => Math.floor(d["Chi tiêu KH"] / binSize) * binSize
+                ),
+                ([key, value]) => ({
+                    "Khoảng chi tiêu": `Từ ${key} đến ${key + binSize}`,
+                    "Số lượng KH": value,
+                    "Chi tiêu KH": key
+                })
+            );
+
+            binnedData.sort((a, b) => a["Chi tiêu KH"] - b["Chi tiêu KH"]);
+
+            const svg = d3.select("#Q12")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand()
+                .domain(binnedData.map(d => `${d["Chi tiêu KH"] / 1000}K`))
+                .range([0, width])
+                .padding(0.2);
+
+            const y = d3.scaleLinear()
+                .domain([0, 1600]) 
+                .nice()
+                .range([height, 0]);
+
+            const bars = svg.selectAll(".bar")
+                .data(binnedData)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => x(`${d["Chi tiêu KH"] / 1000}K`))
+                .attr("y", d => y(d["Số lượng KH"]))
+                .attr("width", x.bandwidth())
+                .attr("height", d => height - y(d["Số lượng KH"]))
+                .attr("fill", "steelblue")
+                .on("mouseover", function (event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`
+                        <p><strong>Đã chi tiêu ${d["Khoảng chi tiêu"]}</strong></p>
+                        <p><strong>Số lượng KH:</strong> ${d["Số lượng KH"].toLocaleString('en-US')}</p>
+                    `)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 30) + "px");
+                })
+                .on("mouseout", function () {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                })
+                .on("click", function (event, d) {
+                    if (d3.select(this).attr("opacity") !== "0.3") {
+                        bars.attr("opacity", 0.3);
+                        d3.select(this).attr("opacity", 1);
+                    } else {
+                        bars.attr("opacity", 1);
+                    }
+                });
+
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .style("font-size", "11px")
+                .selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.8em")
+                .attr("dy", "0.15em")
+                .attr("transform", "rotate(-90)");
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(8))
+                .style("font-size", "11px");
+
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0)
+                .style("position", "absolute")
+                .style("background", "#fff")
+                .style("border", "1px solid #ccc")
+                .style("padding", "10px")
+                .style("pointer-events", "none")
+                .style("text-align", "left");
+        }
+    </script>
+<script>
+</html>
